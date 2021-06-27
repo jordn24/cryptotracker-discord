@@ -7,11 +7,19 @@ const client = new discord.Client();
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
+const yahooFinance = require('yahoo-finance');
+const util = require('util');
+
+var fs = require("fs");
+
 const green = '#33FF4C'
 const red = '#FF3333'
+const usStockImg = "https://eturbonews.com/wp-content/uploads/2017/03/0a13_2.jpg"
+const us_stocks_file = "us_stocks.txt"
+const num_of_stocks = 607
 
 function formatMoney(number) {
-	return number.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+	return "$" + number.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
 }
 
 function printEmbed(title, fields, image) {
@@ -66,8 +74,8 @@ client.on('message', async message => {
 
 			// Send embed
 			fields = [
-				{ name:"$AUD" ,value: "$" + formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
-				{ name:"$USD" ,value: "$" + formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
+				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
+				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
 				{ name:"% Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
 			]
 			message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
@@ -106,17 +114,111 @@ client.on('message', async message => {
 			}
 
 			if (message.content.toLowerCase().includes('stock')){
-				message.channel.send("Not working yet.")
-			}
+				// Read text file and randomly pick one ticker
+				var text = fs.readFileSync(us_stocks_file).toString('utf-8');
+				text = text.split("\n")
+				randomStockTicker = text[Math.floor(Math.random() * num_of_stocks)]
 
+				// Get Data for random stock
+				yahooFinance.quote({
+					symbol: randomStockTicker,
+					modules: ['price', 'summaryDetail', 'summaryProfile']       // optional; default modules.
+				  }, function(err, quote) {
+					{
+					  output: {
+						// Output from API
+						stockName = quote["price"]["shortName"]
+						if (stockName == null) {
+							stockName = "ERROR: No Name found"
+						}
+						stockPrice = quote["price"]["regularMarketPrice"]
+						if (stockPrice == null) {
+							stockPrice = 0
+						}
+						stockPercentageDiff = quote["price"]["regularMarketChangePercent"]
+						if (stockPercentageDiff == null) {
+							stockPercentageDiff = 0
+						}
+						previousClose = quote["summaryDetail"]["previousClose"]
+						if (previousClose == null) {
+							previousClose = 0
+						}
+						marketCap = quote["summaryDetail"]["marketCap"]
+						if (marketCap == null) {
+							marketCap = 0
+						}
+						volume = quote["summaryDetail"]["volume"]
+						if (volume == null) {
+							volume = 0
+						}
+	
+						// Send embed
+						fields = [
+							{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
+							{ name:"Previous Close", value: formatMoney(previousClose)},
+							{ name:"Difference (%)" ,value: stockPercentageDiff},
+							{ name:"Market Cap" ,value: formatMoney(marketCap)},
+							{ name:"Volume" ,value: volume}
+						]
+						message.channel.send(printEmbed(stockName, fields, usStockImg))
+					  }
+					}
+				  });
+			}
 		}
 
 	// STOCK DATA COMMAND
 		if (message.content.toLowerCase().includes(prefix + 'stock ')){
 			
-			return
-		}
+			input = message.content.toLowerCase().substr(7)
 
+			// Get data from API
+			yahooFinance.quote({
+				symbol: input,
+				modules: ['price', 'summaryDetail', 'summaryProfile']       // optional; default modules.
+			  }, function(err, quote) {
+				{
+				  output: {
+					// Output from API
+					stockName = quote["price"]["shortName"]
+					if (stockName == null) {
+						stockName = "ERROR: No Name found"
+					}
+					stockPrice = quote["price"]["regularMarketPrice"]
+					if (stockPrice == null) {
+						stockPrice = 0
+					}
+					stockPercentageDiff = quote["price"]["regularMarketChangePercent"]
+					if (stockPercentageDiff == null) {
+						stockPercentageDiff = 0
+					}
+					previousClose = quote["summaryDetail"]["previousClose"]
+					if (previousClose == null) {
+						previousClose = 0
+					}
+					marketCap = quote["summaryDetail"]["marketCap"]
+					if (marketCap == null) {
+						marketCap = 0
+					}
+					volume = quote["summaryDetail"]["volume"]
+					if (volume == null) {
+						volume = 0
+					}
+
+					// Send embed
+					fields = [
+						{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
+						{ name:"Previous Close", value: formatMoney(previousClose)},
+						{ name:"Difference (%)" ,value: stockPercentageDiff},
+						{ name:"Market Cap" ,value: formatMoney(marketCap)},
+						{ name:"Volume" ,value: volume}
+					]
+					message.channel.send(printEmbed(stockName, fields, usStockImg))
+
+				  }
+				}
+			  });
+		}
 });
 
 client.login(token)
