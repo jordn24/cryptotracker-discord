@@ -156,7 +156,7 @@ client.on('message', async message => {
 						fields = [
 							{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 							{ name:"Previous Close", value: formatMoney(previousClose)},
-							{ name:"Difference (%)" ,value: stockPercentageDiff},
+							{ name:"Difference (%)" ,value: 100 * stockPercentageDiff},
 							{ name:"Market Cap" ,value: formatMoney(marketCap)},
 							{ name:"Volume" ,value: volume}
 						]
@@ -209,7 +209,7 @@ client.on('message', async message => {
 					fields = [
 						{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 						{ name:"Previous Close", value: formatMoney(previousClose)},
-						{ name:"Difference (%)" ,value: stockPercentageDiff},
+						{ name:"Difference (%)" ,value: 100 * stockPercentageDiff},
 						{ name:"Market Cap" ,value: formatMoney(marketCap)},
 						{ name:"Volume" ,value: volume}
 					]
