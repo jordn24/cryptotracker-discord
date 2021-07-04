@@ -11,6 +11,11 @@ const yahooFinance = require('yahoo-finance');
 const util = require('util');
 
 var fs = require("fs");
+const formatter = new Intl.NumberFormat('en-US', {
+	style: 'currency',
+	currency: 'USD',
+	minimumSignificantDigits: 4
+  })
 
 const green = '#33FF4C'
 const red = '#FF3333'
@@ -19,7 +24,7 @@ const us_stocks_file = "us_stocks.txt"
 const num_of_stocks = 607
 
 function formatMoney(number) {
-	return "$" + number.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+	return formatter.format(number);
 }
 
 function printEmbed(title, fields, image) {
@@ -104,9 +109,9 @@ client.on('message', async message => {
 
 				// Send embed
 				fields = [
-					{ name:"$AUD" ,value: "$" + formatMoney(data["data"]["market_data"]["current_price"]["aud"])} ,
-					{ name:"$USD" ,value: "$" + formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
-					{ name:"% Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"] + "%" }
+					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])} ,
+					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
+					{ name:"% Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 				return
