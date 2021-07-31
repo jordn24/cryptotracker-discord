@@ -8,15 +8,13 @@ const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
 const yahooFinance = require('yahoo-finance');
-const util = require('util');
-
 var fs = require("fs");
+
 const formatter = new Intl.NumberFormat('en-US', {
 	style: 'currency',
 	currency: 'USD',
 	minimumSignificantDigits: 4
   })
-
 const green = '#33FF4C'
 const red = '#FF3333'
 const usStockImg = "https://eturbonews.com/wp-content/uploads/2017/03/0a13_2.jpg"
@@ -28,7 +26,6 @@ function formatMoney(number) {
 }
 
 function printEmbed(title, fields, image) {
-
 	// Green or red colour
 	if(fields[2].value > 0){
 		colour = green
@@ -46,10 +43,19 @@ function printEmbed(title, fields, image) {
 
 client.on('message', async message => {
 
-	// HELP COMMAND
-		if (message.content.toLowerCase() === prefix + 'it help'){
-			message.channel.send("Link to help")
-			return
+	// PING COMMAND
+		if (message.content.toLowerCase() === prefix + 'ping'){
+			message.channel.send("Pinging...").then(m =>{
+				// The math thingy to calculate the user's ping
+				  var ping = m.createdTimestamp - message.createdTimestamp;
+	  
+				// Basic embed
+				  var embed = new discord.MessageEmbed()
+				  .setAuthor(`Your ping is ${ping}`)
+
+				  m.delete()
+				  message.reply(embed)
+			});
 		}
 
 	// CRYPTO DATA COMMAND
@@ -81,7 +87,7 @@ client.on('message', async message => {
 			fields = [
 				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-				{ name:"% Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
 			]
 			message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 
@@ -111,7 +117,7 @@ client.on('message', async message => {
 				fields = [
 					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])} ,
 					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
-					{ name:"% Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 				return
@@ -161,7 +167,7 @@ client.on('message', async message => {
 						fields = [
 							{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 							{ name:"Previous Close", value: formatMoney(previousClose)},
-							{ name:"Difference (%)" ,value: 100 * stockPercentageDiff},
+							{ name:"Price Change" ,value: 100 * stockPercentageDiff},
 							{ name:"Market Cap" ,value: formatMoney(marketCap)},
 							{ name:"Volume" ,value: volume}
 						]
@@ -214,7 +220,7 @@ client.on('message', async message => {
 					fields = [
 						{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 						{ name:"Previous Close", value: formatMoney(previousClose)},
-						{ name:"Difference (%)" ,value: 100 * stockPercentageDiff},
+						{ name:"Price Change" ,value: 100 * stockPercentageDiff},
 						{ name:"Market Cap" ,value: formatMoney(marketCap)},
 						{ name:"Volume" ,value: volume}
 					]
@@ -224,6 +230,8 @@ client.on('message', async message => {
 				}
 			  });
 		}
+
+	
 });
 
 client.login(token)
