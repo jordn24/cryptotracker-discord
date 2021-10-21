@@ -231,7 +231,52 @@ client.on('message', async message => {
 			  });
 		}
 
-	
+	// topgainers Command
+		if (message.content.toLowerCase().includes(prefix + 'topgainers')){
+			params = {order: CoinGecko.ORDER.HOUR_24_DESC}
+			// Get list of coins in DESC order
+			data = await CoinGeckoClient.coins.all(params);
+			
+			coinIds = [data['data'][0]['id'], data['data'][1]['id'], data['data'][2]['id']]
+
+			for (var i = 0; i < coinIds.length; i++) {
+
+				// Retrieve Data
+				data = await CoinGeckoClient.coins.fetch(coinIds[i], {});
+				coinName = data["data"]["name"]
+
+				// Send embed
+				fields = [
+					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
+					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+				]
+				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
+			}
+		}
+	// toplosers Command
+		if (message.content.toLowerCase().includes(prefix + 'toplosers')){
+			params = {order: CoinGecko.ORDER.HOUR_24_ASC}
+			// Get list of coins in DESC order
+			data = await CoinGeckoClient.coins.all(params);
+			
+			coinIds = [data['data'][0]['id'], data['data'][1]['id'], data['data'][2]['id']]
+
+			for (var i = 0; i < coinIds.length; i++) {
+
+				// Retrieve Data
+				data = await CoinGeckoClient.coins.fetch(coinIds[i], {});
+				coinName = data["data"]["name"]
+
+				// Send embed
+				fields = [
+					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
+					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+				]
+				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
+			}
+		}
 });
 
 client.login(token)
