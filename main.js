@@ -39,8 +39,16 @@ function printEmbed(title, fields, image) {
 	} else {
 		colour = red
 	}
-	fields[3].value = fields[3].value + "%"
-	fields[4].value = fields[4].value + "%"
+
+	if(fields.length > 5){
+		if (fields[6].value == "0%"){
+			fields[6].value = "N/A"
+		}
+	}
+
+	if (fields[2].value == "$0.000"){
+		fields[2].value = "N/A"
+	}
 
 	return embed = new discord.MessageEmbed()
 				.setColor(colour)
@@ -87,17 +95,18 @@ client.on('message', async message => {
 				message.channel.send("Error: No coin found for ticker " + input)
 				return
 			}
-		
+			
 			// Retrieve Data
 			data = await CoinGeckoClient.coins.fetch(coinId, {});
-			console.log(data["data"]["market_data"])
 			// Send embed
 			fields = [
 				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-				{ name:"Market Cap" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
+				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"] + "%"},
+				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
+				{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
+				{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
 			]
 			message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 
