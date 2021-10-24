@@ -25,14 +25,22 @@ function formatMoney(number) {
 	return formatter.format(number);
 }
 
+/* 
+				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
+				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
+				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
+				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
+*/
 function printEmbed(title, fields, image) {
 	// Green or red colour
-	if(fields[2].value > 0){
+	if(fields[3].value > 0){
 		colour = green
 	} else {
 		colour = red
 	}
-	fields[2].value = fields[2].value + "%"
+	fields[3].value = fields[3].value + "%"
+	fields[4].value = fields[4].value + "%"
 
 	return embed = new discord.MessageEmbed()
 				.setColor(colour)
@@ -79,15 +87,17 @@ client.on('message', async message => {
 				message.channel.send("Error: No coin found for ticker " + input)
 				return
 			}
-			
+		
 			// Retrieve Data
 			data = await CoinGeckoClient.coins.fetch(coinId, {});
-
+			console.log(data["data"]["market_data"])
 			// Send embed
 			fields = [
 				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+				{ name:"Market Cap" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
+				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
 			]
 			message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 
@@ -117,7 +127,9 @@ client.on('message', async message => {
 				fields = [
 					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])} ,
 					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
+					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 				return
@@ -150,6 +162,10 @@ client.on('message', async message => {
 						if (stockPercentageDiff == null) {
 							stockPercentageDiff = 0
 						}
+						stockPostMarket = quote["price"]["postMarketChangePercent"]
+						if (stockPostMarket == null) {
+							stockPostMarket = 0
+						}
 						previousClose = quote["summaryDetail"]["previousClose"]
 						if (previousClose == null) {
 							previousClose = 0
@@ -167,8 +183,9 @@ client.on('message', async message => {
 						fields = [
 							{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 							{ name:"Previous Close", value: formatMoney(previousClose)},
-							{ name:"Price Change" ,value: 100 * stockPercentageDiff},
 							{ name:"Market Cap" ,value: formatMoney(marketCap)},
+							{ name:"Price Change" ,value: 100 * stockPercentageDiff},
+							{ name:"Post Market" ,value: 100 * stockPostMarket},
 							{ name:"Volume" ,value: volume}
 						]
 						message.channel.send(printEmbed(stockName, fields, usStockImg))
@@ -203,6 +220,10 @@ client.on('message', async message => {
 					if (stockPercentageDiff == null) {
 						stockPercentageDiff = 0
 					}
+					stockPostMarket = quote["price"]["postMarketChangePercent"]
+					if (stockPostMarket == null) {
+						stockPostMarket = 0
+					}
 					previousClose = quote["summaryDetail"]["previousClose"]
 					if (previousClose == null) {
 						previousClose = 0
@@ -216,12 +237,15 @@ client.on('message', async message => {
 						volume = 0
 					}
 
+					console.log(quote["price"])
+
 					// Send embed
 					fields = [
 						{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
 						{ name:"Previous Close", value: formatMoney(previousClose)},
-						{ name:"Price Change" ,value: 100 * stockPercentageDiff},
 						{ name:"Market Cap" ,value: formatMoney(marketCap)},
+						{ name:"Price Change" ,value: 100 * stockPercentageDiff},
+						{ name:"Post Market" ,value: 100 * stockPostMarket},
 						{ name:"Volume" ,value: volume}
 					]
 					message.channel.send(printEmbed(stockName, fields, usStockImg))
@@ -249,7 +273,9 @@ client.on('message', async message => {
 				fields = [
 					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
+					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 			}
@@ -272,7 +298,9 @@ client.on('message', async message => {
 				fields = [
 					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]}
+					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
+					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
+					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 			}
