@@ -39,6 +39,7 @@ function printEmbed(title, fields, image) {
 	} else {
 		colour = red
 	}
+	fields[3].value = fields[3].value + "%"
 
 	if(fields.length > 5){
 		if (fields[6].value == "0%"){
@@ -103,7 +104,7 @@ client.on('message', async message => {
 				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
 				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
 				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"] + "%"},
+				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
 				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
 				{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
 				{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
