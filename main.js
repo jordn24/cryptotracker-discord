@@ -30,7 +30,17 @@ function formatMoney(number) {
 				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
 				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
 				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
+				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
+				{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
+				{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
+			]
+				{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
+				{ name:"Previous Close", value: formatMoney(previousClose)},
+				{ name:"Market Cap" ,value: formatMoney(marketCap)},
+				{ name:"Price Change" ,value: 100 * stockPercentageDiff},
+				{ name:"Post Market" ,value: 100 * stockPostMarket},
+				{ name:"Volume" ,value: volume}
+			
 */
 function printEmbed(title, fields, image) {
 	// Green or red colour
@@ -41,7 +51,7 @@ function printEmbed(title, fields, image) {
 	}
 	fields[3].value = fields[3].value + "%"
 
-	if(fields.length > 5){
+	if(fields.length == 7){
 		if (fields[6].value == "0%"){
 			fields[6].value = "N/A"
 		}
@@ -139,7 +149,9 @@ client.on('message', async message => {
 					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
 					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
 					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
+					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
+					{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
+					{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
 				]
 				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
 				return
@@ -255,7 +267,7 @@ client.on('message', async message => {
 						{ name:"Previous Close", value: formatMoney(previousClose)},
 						{ name:"Market Cap" ,value: formatMoney(marketCap)},
 						{ name:"Price Change" ,value: 100 * stockPercentageDiff},
-						{ name:"Post Market" ,value: 100 * stockPostMarket},
+						{ name:"Post Market" ,value: (100 * stockPostMarket) + "%"},
 						{ name:"Volume" ,value: volume}
 					]
 					message.channel.send(printEmbed(stockName, fields, usStockImg))
