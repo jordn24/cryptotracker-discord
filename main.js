@@ -2,22 +2,19 @@ const discord = require('discord.js')
 
 const { prefix } = require('./config.json');
 const { token } = require('./api_keys.json');
-
+const { getCryptoByTicker, getRandomCrypto, getSortedCryptoList } = require('./crypto');
 const client = new discord.Client();
-const CoinGecko = require('coingecko-api');
-const CoinGeckoClient = new CoinGecko();
-
 const yahooFinance = require('yahoo-finance');
 var fs = require("fs");
-
 const formatter = new Intl.NumberFormat('en-US', {
 	style: 'currency',
 	currency: 'USD',
 	minimumSignificantDigits: 4
   })
+
+const usStockImg = "https://eturbonews.com/wp-content/uploads/2017/03/0a13_2.jpg"
 const green = '#33FF4C'
 const red = '#FF3333'
-const usStockImg = "https://eturbonews.com/wp-content/uploads/2017/03/0a13_2.jpg"
 const us_stocks_file = "us_stocks.txt"
 const num_of_stocks = 607
 
@@ -25,23 +22,6 @@ function formatMoney(number) {
 	return formatter.format(number);
 }
 
-/* 
-				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
-				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
-				{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
-				{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
-			]
-				{ name:"Current Price (USD)" ,value: formatMoney(stockPrice)},
-				{ name:"Previous Close", value: formatMoney(previousClose)},
-				{ name:"Market Cap" ,value: formatMoney(marketCap)},
-				{ name:"Price Change" ,value: 100 * stockPercentageDiff},
-				{ name:"Post Market" ,value: 100 * stockPostMarket},
-				{ name:"Volume" ,value: volume}
-			
-*/
 function printEmbed(title, fields, image) {
 	// Green or red colour
 	if(fields[3].value > 0){
@@ -90,37 +70,10 @@ client.on('message', async message => {
 			
 			input = message.content.toLowerCase().substr(8)
 		
-			// Search with ticker
-			data = await CoinGeckoClient.coins.list();
-			length = data["data"].length
-			coinId = "empty"
-			for (var i = 0; i < length; i++) {
-				if (data["data"][i]["symbol"] == input) {
-					coinId = data["data"][i]["id"]
-					coinName = data["data"][i]["name"]
-				}
-			}
-
-			// If no ticker found
-			if (coinId == "empty"){
-				message.channel.send("Error: No coin found for ticker " + input)
-				return
-			}
+			getCryptoByTicker(input).then((output) => {
+				message.channel.send(output)
+			}).catch(console.log)
 			
-			// Retrieve Data
-			data = await CoinGeckoClient.coins.fetch(coinId, {});
-			// Send embed
-			fields = [
-				{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
-				{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-				{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-				{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-				{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
-				{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
-				{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
-			]
-			message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
-
 			return
 		}
 
@@ -128,34 +81,10 @@ client.on('message', async message => {
 		if (message.content.toLowerCase().includes(prefix + 'random ')){
 			
 			if (message.content.toLowerCase().includes('crypto')){
-				// Get list of coins
-				data = await CoinGeckoClient.coins.list();
-				length = data["data"].length
-
-				// Random number within length
-				i = Math.floor(Math.random() * length);
-
-				// Find corresponding
-				data["data"][i]["symbol"]
-				coinId = data["data"][i]["id"]
-				coinName = data["data"][i]["name"]
-
-				// Retrieve Data
-				data = await CoinGeckoClient.coins.fetch(coinId, {});
-
-				// Send embed
-				fields = [
-					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])} ,
-					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])} ,
-					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"] + "%"},
-					{ name:"30 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_30d"] + "%"},
-					{ name:"1 Year Difference" ,value: data["data"]["market_data"]["price_change_percentage_1y"] + "%"}
-				]
-				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
+				getRandomCrypto().then((output) => {
+					message.channel.send(output)
+				}).catch(console.log)
 				return
-		
 			}
 
 			if (message.content.toLowerCase().includes('stock')){
@@ -277,56 +206,34 @@ client.on('message', async message => {
 			  });
 		}
 
-	// topgainers Command
-		if (message.content.toLowerCase().includes(prefix + 'topgainers')){
-			params = {order: CoinGecko.ORDER.HOUR_24_DESC}
-			// Get list of coins in DESC order
-			data = await CoinGeckoClient.coins.all(params);
-			
-			coinIds = [data['data'][0]['id'], data['data'][1]['id'], data['data'][2]['id']]
+	// SORT CRYPTO COMMAND
+		if (message.content.toLowerCase().includes(prefix + 'sort ')){
+			input = message.content.toLowerCase().substr(6)
+			sort = ""
 
-			for (var i = 0; i < coinIds.length; i++) {
-
-				// Retrieve Data
-				data = await CoinGeckoClient.coins.fetch(coinIds[i], {});
-				coinName = data["data"]["name"]
-
-				// Send embed
-				fields = [
-					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
-					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
-				]
-				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
-			}
+			getSortedCryptoList(sort).then((output) => {
+				for(var i = 0; i < output.length; i++){
+					message.channel.send(output[i])
+				}
+			}).catch(console.log)
 		}
-	// toplosers Command
-		if (message.content.toLowerCase().includes(prefix + 'toplosers')){
-			params = {order: CoinGecko.ORDER.HOUR_24_ASC}
-			// Get list of coins in DESC order
-			data = await CoinGeckoClient.coins.all(params);
-			
-			coinIds = [data['data'][0]['id'], data['data'][1]['id'], data['data'][2]['id']]
 
-			for (var i = 0; i < coinIds.length; i++) {
+	// HELP SORT COMMAND
+	if (message.content.toLowerCase().includes(prefix + 'help sort')){
 
-				// Retrieve Data
-				data = await CoinGeckoClient.coins.fetch(coinIds[i], {});
-				coinName = data["data"]["name"]
+		fields = [
+			{name: "gainers", value: "Highest 24 hour growth"},
+			{name: "losers", value: "Lowest 24 hour growth"},
+			{name: "marketcap", value: "Highest Market Cap"},
+			{name: "volume", value: "Highest Volume"}
+		]
 
-				// Send embed
-				fields = [
-					{ name:"$AUD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["aud"])},
-					{ name:"$USD" ,value: formatMoney(data["data"]["market_data"]["current_price"]["usd"])},
-					{ name:"Market Cap $USD" ,value: formatMoney(data["data"]["market_data"]["market_cap"]["usd"])},
-					{ name:"24 HR Difference" ,value: data["data"]["market_data"]["price_change_percentage_24h"]},
-					{ name:"7 Day Difference" ,value: data["data"]["market_data"]["price_change_percentage_7d"]}
-				]
-				message.channel.send(printEmbed(coinName.toUpperCase(), fields, data["data"]["image"]["large"]))
-			}
-		}
+		embed = new discord.MessageEmbed()
+			.setTitle("Sort Commands")
+			.addFields(fields)
+		message.channel.send(embed)
+		return
+	}
 });
 
 client.login(token)

@@ -3,8 +3,7 @@
 const discord = require('discord.js')
 const { token } = require('./api_keys.json');
 const client = new discord.Client();
-const CoinGecko = require('coingecko-api');
-const CoinGeckoClient = new CoinGecko();
+const { getCryptoPrice } = require('./crypto');
 const { prefix } = require('./config.json');
 
 
@@ -45,30 +44,14 @@ client.on('message', async message => {
 			}
 		}
 
-		// Search with ticker
-		data = await CoinGeckoClient.coins.list();
-		length = data["data"].length
-		coinId = "empty"
-		for (var i = 0; i < length; i++) {
-			if (data["data"][i]["symbol"] == ticker) {
-				coinId = data["data"][i]["id"]
-				coinName = data["data"][i]["name"]
+		getCryptoPrice(ticker).then((output) => {
+			current_aud_val = output * amount;
+			if (current_aud_val == 0){
+				message.channel.send("No Ticker Found for " + ticker)
+			} else {
+				message.channel.send(amount + " " + ticker.toUpperCase() + " is " + formatMoney(current_aud_val) + " AUD");
 			}
-		}
-
-		// If no ticker found
-		if (coinId == "empty"){
-			message.channel.send("Error: No coin found for ticker " + input)
-			return
-		}
-
-		// Retrieve Data
-		data = await CoinGeckoClient.coins.fetch(coinId, {});
-
-		current_aud_val = data["data"]["market_data"]["current_price"]["aud"] * amount;
-
-		message.channel.send(amount + " " + ticker.toUpperCase() + " is " + formatMoney(current_aud_val) + " AUD");
-
+		})
 	}
 
 });
